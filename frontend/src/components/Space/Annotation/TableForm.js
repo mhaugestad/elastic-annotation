@@ -14,17 +14,14 @@ import {
     EuiModalHeaderTitle,
     EuiSpacer,
   } from '@elastic/eui';
+import { useSpace } from "../../../context/spacecontext";
 
 const TableForm = (props) => {
     const {slug: project_id} = useParams();
-    const [options, setOptions] = useState();
-    const [selectedOptions, setSelected] = useState(options);
+    const {labels} = useSpace();
+    const { selectedLabels, setSelectedLabels } = props;
     const [isPopoverOpen, setPopover] = useState(false);
     const containerPopoverId = useGeneratedHtmlId({ prefix: 'containerPopover' });
-
-    useEffect(()=>{
-      setOptions(()=>props.labels.map((lab) => ({label: lab})))
-    },[props.labels])
 
     const togglePopover = () => {
         setPopover(!isPopoverOpen);
@@ -35,7 +32,7 @@ const TableForm = (props) => {
       };
     
       const onChange = (selectedOptions) => {
-        props.setSelected(selectedOptions);
+        props.setSelectedLabels(selectedOptions);
       };
     
     const button = (
@@ -44,7 +41,7 @@ const TableForm = (props) => {
         </EuiButton>
     );
 
-    if (!options) {
+    if (!selectedLabels) {
       return <div>...</div>
     }
 
@@ -54,7 +51,7 @@ const TableForm = (props) => {
         <EuiComboBox
             prepend="Display text field"
             singleSelection={{ asPlainText: true }}
-            options={props.fields.map((v) => ({ label: v }))}
+            options={props.fields}
             selectedOptions={props.chosenField}
             onChange={(e) => {
                 props.setChosenField(e);
@@ -67,11 +64,12 @@ const TableForm = (props) => {
             button={button}
             isOpen={isPopoverOpen}
             closePopover={closePopover}
+            style={{float:'right', display: 'flex', justifyContent: 'flex-end'}}
         >
         <EuiComboBox
                 placeholder="Select labels to display"
-                options={options}
-                selectedOptions={props.selectedOptions}
+                options={labels}
+                selectedOptions={selectedLabels}
                 onChange={(e)=>onChange(e)}
           />
       </EuiPopover>

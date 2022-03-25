@@ -1,3 +1,5 @@
+from sqlite3 import Date
+from urllib.error import URLError
 from pydantic import BaseModel
 import typing as t
 
@@ -16,23 +18,45 @@ class ApiKey(BaseModel):
     id: str
     api_key: str
 
-class Project(BaseModel):
-    project_name: str
-    description: str
-    labels: t.Optional[t.List[str]]
-    
-class ProjectCreate(Project):
-    description: str
+class Space(BaseModel):
+    id: str
+    name: str
+    disabledFeatures: t.Optional[t.List[t.Union[str, None]]]
 
-class ProjectUpdate(Project):
-    description: str
-    labels: t.List[str]
+class IndexPattern(BaseModel):
+    id: str
+    name: str
+
+class CreateIndexPattern(IndexPattern):
+    id: str
+    name: str
+    space_id: str
+
+class Labels(BaseModel):
+    label: str
+    value: str
+    color: t.Optional[str]
+
+class IndexLabels(BaseModel):
+    index: str
+    labels: t.List[Labels]
+
+class TaskRegister(BaseModel):
+    task_id: str
+    index: str
+    onSuccess: str
+    onFailure: str
+
+class TaskStatus(BaseModel):
+    task_id: str
+    status: str
 
 class Mapping(BaseModel):
     mapping: t.Optional[t.Dict[str, str]]
 
 class Query(BaseModel):
     query: t.Optional[str]
+    document_id: t.Optional[str]
 
 class Annotation(BaseModel):
     id: str

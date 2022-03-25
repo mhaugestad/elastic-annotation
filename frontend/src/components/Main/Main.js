@@ -8,22 +8,21 @@ import {
   EuiText
 } from "@elastic/eui";
 import { useAuth } from "../../context/auth";
-import ProjectForm from './ProjectForm'
-import ListProjects from './ListProjects'
+import ListProjects from "./ListProjects";
 
 const Main = () => {
-  const [projects, setProjects] = useState([]);
+  const [spaces, setSpaces] = useState([]);
   const [loading, setLoading] = useState();
-  const [error, setError] = useState();
   const { HEADERS } = useAuth();
 
   useEffect(() => {
-    fetch("/api/v1/project", {method: "GET", headers: new Headers(HEADERS)})
+    setLoading(()=>true)
+    fetch("/api/v1/spaces", {method: "GET", headers: new Headers(HEADERS)})
     .then((response) => response.json())
-    .then(setProjects)
-    .catch((error) => setError(error))
+    .then(setSpaces)
+    .catch((error) => console.log(error))
     .finally(() => {
-      setLoading(false)
+      setLoading(()=>false)
     });
   },[]);
 
@@ -33,25 +32,13 @@ const Main = () => {
       template="empty"
       pageHeader={{
         iconType: "logoElastic",
-        pageTitle: "Main page",
+        pageTitle: "Choose Space",
       }}
     >
-      <EuiFlexGrid columns={2}>
-        <EuiFlexItem>
-          <EuiPanel style={{ height: 600 }}>
-            <ProjectForm setProjects={setProjects}/>
-            </EuiPanel>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiPanel style={{ height: 600 }}>
-          <EuiText style={{ marginLeft: '40%'}}>
-            <h2>Projects</h2>
-          </EuiText>
-            {projects.length > 0 &&
-            <ListProjects projects={projects} setProjects={setProjects} />
-            }
-          </EuiPanel>
-        </EuiFlexItem>
+      <EuiFlexGrid columns={4}>
+        {spaces.length > 0 &&
+            <ListProjects spaces={spaces} />
+        }
       </EuiFlexGrid>
     </EuiPageTemplate>
   );

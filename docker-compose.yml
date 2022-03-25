@@ -3,6 +3,7 @@ services:
 
   nginx:
     image: nginx:1.17
+    container_name: nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
@@ -13,6 +14,7 @@ services:
   
   redis:
     image: redis
+    container_name: redis
     ports:
       - 6379:6379
   
@@ -20,20 +22,24 @@ services:
     build:
       context: backend
       dockerfile: Dockerfile
-    command: celery --app app.tasks worker --loglevel=DEBUG -Q main-queue -c 1
+    image: worker
+    container_name: worker
+    command: celery --app app.worker.tasks worker --loglevel=DEBUG -Q main-queue -c 1
     environment:
-      ELASTIC_URL: http://elasticsearch:9200/
+      ELASTIC_CLOUD_ID: ${ELASTIC_CLOUD_ID}
       CELERY_BROKER_URL: redis://redis
       CELERY_RESULT_BACKEND: redis://redis
+      RAY_ADDRESS: ${RAY_ADDRESS}
+      GIT_ACCESS_TOKEN: ${GIT_ACCESS_TOKEN}
     depends_on:
       - redis  
     networks:
-      - elastic
       - default
 
   flower:  
     image: mher/flower
     command: celery flower --broker=redis://redis:6379/0 --port=5555
+    container_name: worker-monitor
     ports:  
         - 5555:5555
     environment:
@@ -47,6 +53,7 @@ services:
     build:
       context: frontend
       dockerfile: Dockerfile
+    image: frontend
     container_name: frontend
     stdin_open: true
     ports:
@@ -57,41 +64,19 @@ services:
     environment:
       - NODE_ENV=development
 
-  elasticsearch:
-    image: "docker.elastic.co/elasticsearch/elasticsearch:7.16.1"
-    container_name: elasticsearch
-    environment:
-    - discovery.type=single-node
-    - cluster.routing.allocation.disk.threshold_enabled=true
-    - cluster.routing.allocation.disk.watermark.low=65%
-    - cluster.routing.allocation.disk.watermark.high=70%
-    - xpack.security.enabled=true
-    - xpack.security.authc.api_key.enabled=true
-    - xpack.security.audit.enabled=true
-    - xpack.license.self_generated.type=basic
-    - ELASTIC_PASSWORD=safest_of_passwords
-    ports:
-    - "9200:9200"
-    networks:
-      - elastic
-
   backend:
     build:
       context: backend
       dockerfile: Dockerfile
+    image: backend
     container_name: backend
     command: python app/main.py
     ports:
       - "8888:8888"
     environment:
       PYTHONPATH: .
-      ELASTIC_URL: http://elasticsearch:9200/
-    depends_on:
-      - "elasticsearch"
+      ELASTIC_CLOUD_ID: ${ELASTIC_CLOUD_ID}
+      KIBANA_URL: ${KIBANA_URL}
+      GIT_ACCESS_TOKEN: ${GIT_ACCESS_TOKEN}
     networks:
-      - elastic
       - default
-
-networks:
-  elastic:
-    driver: bridge

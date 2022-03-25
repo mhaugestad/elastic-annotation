@@ -17,6 +17,7 @@
     "react-plotly.js": "^2.5.1",
     "react-router-dom": "^6.1.1",
     "react-scripts": "4.0.3",
+    "redis": "^4.0.4",
     "web-vitals": "^1.0.1"
   },
   "scripts": {

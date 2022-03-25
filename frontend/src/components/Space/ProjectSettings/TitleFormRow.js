@@ -8,7 +8,11 @@ import {
 const TitleFormRow = (props) => {
   return (
     <EuiFormRow label={props.title}>
-      <EuiFieldText name="name" value={props.title} isDisabled />
+      <EuiFieldText
+      prepend='Current index: '
+      name="name" 
+      value={props.title} 
+      isDisabled />
     </EuiFormRow>
   );
 };

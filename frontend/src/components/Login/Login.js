@@ -30,16 +30,12 @@ const Login = () => {
         }
       }).then((json_resp) => {
         setTokens(json_resp.id, json_resp.api_key)
-        //localStorage.setItem('api_key_id', json_resp.id);
-        //localStorage.setItem('api_key', json_resp.api_key);
       })
       .catch((error)=>{
         setError(error)
       }).finally(()=> {
-        navigate('/projects')
+        navigate('/spaces')
       })
-
-      //return <Navigate to="/"/>
   }
 
   return (

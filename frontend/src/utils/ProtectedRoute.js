@@ -1,7 +1,6 @@
 // ProtectedRoute.tsx
 import React, { useState, useEffect } from "react";
 import { Route, Navigate } from "react-router-dom";
-import { BACKEND_URL } from "./configs";
 import { useAuth } from "../context/auth";
 
 export const PrivateRoute = ({ children }) => {

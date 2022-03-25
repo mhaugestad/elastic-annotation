@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 import typing as t
 from app.elastic.session import get_cluster_by_user, get_cluster_by_key
-from app.elastic.schemas import (User, Token, Authenticated, ApiKey, 
-                                Project, ProjectCreate, ProjectUpdate, Mapping, 
-                                Query, Annotation, Annotations)
+from app.elastic.schemas import (User, Token, Authenticated, ApiKey)
 
-mainrouter = r = APIRouter()
+authenticationrouter = r = APIRouter()
 
 @r.post("/token", response_model=Token)
 async def login(user: User, es=Depends(get_cluster_by_user))-> dict:

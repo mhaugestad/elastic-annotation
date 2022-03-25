@@ -4,17 +4,20 @@ from starlette.requests import Request
 import uvicorn
 import os
 
-from app.api.api_v1.routers.mainrouter import mainrouter
-from app.api.api_v1.routers.projectsrouter import projectsrouter
+from app.api.api_v1.routers.authenticationrouter import authenticationrouter
+from app.api.api_v1.routers.spacesrouter import spacesrouter
+from app.api.api_v1.routers.indexrouter import indexrouter
 from app.api.api_v1.routers.documentsrouter import documentsrouter
-from app.api.api_v1.routers.analysisrouter import analysisrouter
+from app.api.api_v1.routers.tasksrouter import tasksrouter
+
 
 app = FastAPI(
-    title="project1", docs_url="/api/docs", openapi_url="/api"
+    title="Elastic Annotator", docs_url="/api/docs", openapi_url="/api"
 )
 
 origins = [
-    os.environ['ELASTIC_URL'],
+    os.environ['ELASTIC_CLOUD_ID'],
+    os.environ['KIBANA_URL'],
     "http://localhost:3000",
     "localhost:3000"
 ]
@@ -41,15 +44,21 @@ async def root():
 
 # Routers
 app.include_router(
-    mainrouter,
+    authenticationrouter,
     prefix="/api/v1",
-    tags=["main"]
+    tags=["authentication"]
 )
 
 app.include_router(
-    projectsrouter,
+    spacesrouter,
     prefix="/api/v1",
-    tags=["projects"]
+    tags=["spaces"]
+)
+
+app.include_router(
+    indexrouter,
+    prefix="/api/v1",
+    tags=["indices"]
 )
 
 app.include_router(
@@ -59,11 +68,10 @@ app.include_router(
 )
 
 app.include_router(
-    analysisrouter,
+    tasksrouter,
     prefix="/api/v1",
-    tags=["analysis"]
+    tags=["tasks"]
 )
-
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", reload=True, port=8888)

@@ -1,6 +1,7 @@
 import React, {useState} from 'react'
 import { useGeneratedHtmlId } from '@elastic/eui';
-import { useAuth } from '../../context/auth';
+import { useAuth } from '../../../context/auth';
+import { useSpace } from '../../../context/spacecontext';
 import {
     EuiButton,
     EuiButtonEmpty,
@@ -18,6 +19,7 @@ import {
 
 const LabelSearch = (props) => {
     const { HEADERS } = useAuth();
+    const { labels, index } = useSpace();
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [labelSelected, setLabelSelected] = useState();
     const [labelValue, setLabelValue] = useState('true');
@@ -27,10 +29,10 @@ const LabelSearch = (props) => {
   
     const modalFormId = useGeneratedHtmlId({ prefix: 'modalForm' });
 
-    const closeModal = () => {setIsModalVisible(false); console.log(labelSelected)};
+    const closeModal = () => setIsModalVisible(false);
     const showModal = () => setIsModalVisible(true);
   
-    const labelSelectOptions = props.labels.map((d)=>({value:d, inputDisplay:d}));
+    const labelSelectOptions = labels.map((item)=>({value:item.value, inputDisplay:item.label}));
     const labelValueOptions = [{value: 'true', inputDisplay: 'True'}, {value: 'false', inputDisplay: 'False'}];
     
     const onLabelChange = (value) => {
@@ -45,7 +47,8 @@ const LabelSearch = (props) => {
     const onSubmit = (e) => {
         //e.preventDefault()
         if (labelSelected) {      
-            fetch("/api/v1/project/" + props.project_id + "/annotations_by_query/?" + new URLSearchParams({
+            fetch("/api/v1/documents/annotate_by_query?" + new URLSearchParams({
+                index_pattern: index,
                 field: labelSelected,
                 value: labelValue
                   }),

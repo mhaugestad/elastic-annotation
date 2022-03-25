@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useAuth } from "../../context/auth";
+import { useAuth } from "../../../context/auth";
+import { useSpace } from "../../../context/spacecontext";
 import {
   EuiCard,
   EuiFormRow,
@@ -10,95 +11,65 @@ import {
   EuiButton,
   EuiSpacer
 } from "@elastic/eui";
-import DocumentLines from './DocumentLines';
 import TableForm from "./TableForm";
 import DocumentTable from "./DocumentTable";
+import SimilarCard from "./SimilarCard";
 import LabelSearch from "./LabelSearch";
 import { useParams } from 'react-router-dom';
 
 const AnnotateData = (props) => {
   const { HEADERS } = useAuth();
-  const {slug: project_id} = useParams();
+  const { index, labels } = useSpace();
+  console.log(labels)
   const [isClearable, setIsClearable] = useState(true);
   const query = useRef("")
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [documentId, setDocumentId] = useState(null);
 
   const [updatedByQuery, setUpdatedByQuery] = useState(false);
-  const [labels, setLabels] = useState([]);
   const [data, setData] = useState({hits:[]});
   const [annotations, setAnnotations] = useState([]);
 
-  const [fields, setFields] = useState([]);
-  const [chosenField, setChosenField] = useState(JSON.parse(localStorage.getItem(project_id)));
-  console.log(chosenField)
+  const [fields, setFields] = useState([{label: 'Hit Sentence', value: 'HitSentence'}, 
+                                        {label: 'Opening Text', value: 'OpeningText'}, 
+                                        {label: 'Twitter Bio', value: 'TwitterBio'}, 
+                                        {label: 'Headline', value: 'Headline'}]);
+  const [chosenField, setChosenField] = useState([{label: 'Headline', value: 'Headline'}])
 
-  const [selectedLabelColumns, setSelectedLabelColumns] = useState([]);
+  const [selectedLabelColumns, setSelectedLabelColumns] = useState(labels ? labels : []);
 
-  const [loadingLabels, setLoadingLabels] = useState(true);
   const [loadingData, setLoadingData] = useState(true);
-  const [loadingMapping, setLoadingMapping] = useState(true);
   const [error, setError] = useState();
-
-
-  // Get labels
-  useEffect(()=>{
-    setLoadingLabels(()=>true)
-    fetch("/api/v1/project/" + project_id + "/labels", { headers: new Headers(HEADERS) })
-    .then((response) => response.json())
-    .then((response_json) => {
-      if (response_json) {
-      setLabels(()=>response_json ? response_json : []);
-      setSelectedLabelColumns(()=>response_json.map((lab)=>({label:lab})))
-      }
-    })
-    .catch(setError)
-    .finally(() => setLoadingLabels(()=>false));
-
-  } ,[])
-
- 
-  // loading mappings
-  useEffect(()=>{
-    setLoadingMapping(()=>true);
-    fetch("/api/v1/project/" + project_id + "/mapping", { headers: new Headers(HEADERS) })
-      .then((response) => response.json())
-      .then((response) => {
-        let items = Object.keys(response)
-        setFields(items)
-        if (!chosenField) {
-          setChosenField(()=>[{label: items[0]}])
-        }
-      })
-      .catch(setError)
-      .finally(() => setLoadingMapping(()=>false));
-  },[])
-
+  
+  // Get data
   useEffect(()=>{
     setLoadingData((prev)=>true)
-    let body = []
-    if (query.current.state?.value) {
-      body = JSON.stringify({query: query.current.state.value})
-    }
-    fetch("/api/v1/project/" + project_id + "/documents/?" + new URLSearchParams({
+    fetch("/api/v1/documents?" + new URLSearchParams({
+    index_pattern: index,
     page: pageIndex,
     size: pageSize
       }),
-      { headers: new Headers(HEADERS), method: 'POST', body: body})
+      { headers: new Headers(HEADERS), method: 'POST', 
+      body: JSON.stringify({query: query.current.state.value ? query.current.state.value : null,
+                            document_id: documentId? documentId : null})})
     .then((response) => response.json())
     .then((response_json) => {
       setData(()=>response_json)
     })
     .catch(setError)
     .finally(() => setLoadingData((prev)=>false));
-  }, [pageIndex, pageSize, updatedByQuery])  // Get data
+  }, [pageIndex, pageSize, updatedByQuery, documentId])  // Get data
   
   const onSearch = () => {
     setLoadingData((prev)=>true)
-    fetch("/api/v1/project/" + project_id + "/documents/?" + new URLSearchParams({
+    fetch("/api/v1/documents?" + new URLSearchParams({
+      index_pattern: index,
       page: pageIndex
       }), 
-      { headers: new Headers(HEADERS), method: 'POST', body: JSON.stringify({query: query.current.state.value})})
+      { headers: new Headers(HEADERS), method: 'POST', 
+        body: JSON.stringify({query: query.current.state.value,
+                              document_id: documentId? documentId : null})})
     .then((response) => response.json())
     .then((response_json) => {setData(()=>response_json); console.log(response_json)})
     .catch(setError)
@@ -117,7 +88,8 @@ const AnnotateData = (props) => {
     return <div>No Chosen field</div>
   }
 
-  return (    
+  return (  
+    <>
     <EuiCard style={{height:'auto'}}>
        <EuiFlexGroup grow={false}>
       <EuiFlexItem grow={9}>
@@ -132,30 +104,27 @@ const AnnotateData = (props) => {
       />
       </EuiFlexItem>
       <EuiFlexItem>
-      {(!loadingLabels & !loadingMapping) ?
-          <LabelSearch labels={labels} query={query} project_id={project_id} setUpdatedByQuery={setUpdatedByQuery}/> :
-          <div>...</div>
-        }
+          <LabelSearch query={query} setUpdatedByQuery={setUpdatedByQuery}/>
       </EuiFlexItem>
       </EuiFlexGroup>
       <EuiFlexGroup>
-        { (labels && chosenField) ? (
         <TableForm 
           fields={fields} 
           labels={labels}
           chosenField={chosenField} 
           setChosenField={setChosenField}
-          selectedOptions={selectedLabelColumns}
-          setSelected={setSelectedLabelColumns}
-          />) :
-          (<div>...</div>)
-        }
+          selectedLabels={selectedLabelColumns}
+          setSelectedLabels={setSelectedLabelColumns}
+          />
       </EuiFlexGroup>
-
+      {documentId && 
+        <SimilarCard documentId={documentId} setDocumentId={setDocumentId}/>
+      }
       <EuiSpacer />
       {data.hits ? (
       <DocumentTable 
-        labels={selectedLabelColumns} 
+        labels={labels}
+        selectedlabels={selectedLabelColumns} 
         data={data}
         loadingData={loadingData} 
         fields={fields} 
@@ -165,10 +134,12 @@ const AnnotateData = (props) => {
         pageIndex={pageIndex}
         pageSize={pageSize}
         setPageSize={setPageSize}
+        setDocumentId={setDocumentId}
         />) :
         <div>No data</div>
       }
     </EuiCard>
+    </> 
   );
 };
 

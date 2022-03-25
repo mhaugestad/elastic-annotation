@@ -1,26 +1,21 @@
 import { EuiSideNav, htmlIdGenerator } from '@elastic/eui';
-import React, { useState } from 'react';
-import UploadData from "./UploadData";
-import AnnotateData from "./AnnotateData";
-import DocumentTable from './DocumentTable';
-import ProjectSettings from "./ProjectSettings";
-import DocumentMap from './DocumentMap/DocumentMap';
+import React, { useState, useEffect } from 'react';
+import AnnotateData from "../Annotation/AnnotateData";
+import SpaceSettings from "../ProjectSettings/SpaceSettings";
+import DocumentMap from '../DocumentMap/DocumentMap';
+
 
 const Sidebar = (props) => {
+  
     const sideNav = [
         {
           name: 'Menu',
           id: htmlIdGenerator('sideNav')(),
           items: [
             {
-              name: 'Project Settings',
+              name: 'Index Settings',
               id: htmlIdGenerator('projectSettings')(),
-              onClick: () => {props.setPageComp(<ProjectSettings />)},
-            },
-            {
-              name: 'Upload data',
-              id: htmlIdGenerator('dataUpload')(),
-              onClick: () => {props.setPageComp(<UploadData />)},
+              onClick: () => {props.setPageComp(<SpaceSettings />)},
             },
             {
               name: 'Annotate data',

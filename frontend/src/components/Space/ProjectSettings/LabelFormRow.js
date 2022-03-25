@@ -11,15 +11,18 @@ import {
   euiPaletteColorBlindBehindText,
 } from "@elastic/eui";
 
-const LabelFormRow = (props) => {
-  const visColors = euiPaletteColorBlind();
-  const visColorsBehindText = euiPaletteColorBlindBehindText();
+import { useSpace } from "../../../context/spacecontext";
 
+const LabelFormRow = (props) => {
+  //const visColors = euiPaletteColorBlind();
+  const visColors = euiPaletteColorBlind({rotations: 3, order: 'group', direction: 'both'})
+  const visColorsBehindText = euiPaletteColorBlindBehindText();
   const [options, setOptions] = useState([]);
   //const [selectedOptions, setSelected] = useState([]);
+  const {index, labels, setLabels} = useSpace();
 
   const onChange = (selectedOptions) => {
-    props.setLabels(selectedOptions);
+    setLabels(selectedOptions);
   };
 
   const onCreateOption = (searchValue, flattenedOptions = []) => {
@@ -33,6 +36,7 @@ const LabelFormRow = (props) => {
     const newOption = {
       value: searchValue,
       label: searchValue,
+      color: visColorsBehindText[options.length]
     };
 
     // Create the option if it doesn't exist.
@@ -46,7 +50,7 @@ const LabelFormRow = (props) => {
     }
 
     // Select the option.
-    props.setLabels((prevSelected) => [...prevSelected, newOption]);
+    setLabels((prevSelected) => [...prevSelected, newOption]);
   };
 
   const renderOption = (option, searchValue, contentClassName) => {
@@ -69,10 +73,11 @@ const LabelFormRow = (props) => {
         aria-label="Accessible screen reader label"
         placeholder="Select or create options"
         options={options}
-        selectedOptions={props.labels}
+        selectedOptions={labels}
         onChange={onChange}
         onCreateOption={onCreateOption}
         renderOption={renderOption}
+        isDisabled={!index}
       />
     </EuiFormRow>
   );

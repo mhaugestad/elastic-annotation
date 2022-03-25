@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../../context/auth";
+import { useSpace } from "../../../context/spacecontext";
 import { useParams } from "react-router-dom";
 import Plot from "react-plotly.js";
 import {
@@ -14,49 +15,43 @@ import LabelModal from "./LabelModal";
 
 const DocumentMap = () => {
   const { HEADERS } = useAuth();
-  const { slug: project_id } = useParams();
+  const {index, labels, setLabels} = useSpace();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const query = useRef("")
-  const [labels, setLabels] = useState();
   const [mappings, setMappings] = useState([
-    { value: "text", text: "Text" },
-    { value: "user_description", text: "User Description" },
+    { value: "HitSentence", text: "Hit Sentence" },
+    { value: "Headline", text: "Headline" },
+    { value: "OpeningText", text: "OpeningText" },
+    { value: "Twitter Bio", text: "TwitterBio" },
   ]);
 
   const [selectedLabel, setSelectedLabel] = useState();
   const [selectedMapping, setSelectedMapping] = useState();
   const [textArray, setTextArray] = useState();
-  const [reloadData, setReloadData] = useState(false);
-
+  
   const [data, setData] = useState([]);
+  const [reloadData, setReloadData] = useState(false);
   const [highlightedData, setHighlightedData] = useState([]);
+  console.log(data)
 
   useEffect(() => {
     fetch(
-      `/api/v1/project/${project_id}/documents/?${new URLSearchParams({
-        page: 0,
-        size: 1000,
-      })}`,
-      { headers: new Headers(HEADERS), method: "POST" }
+      `/api/v1/documents/all?index_pattern=${index}`,
+      { headers: new Headers(HEADERS),
+        method: "POST",
+        body: JSON.stringify({query: null})
+      }
     )
       .then((response) => response.json())
       .then(setData)
       .catch((error)=>console.log(error));
-
       setReloadData((prev)=>false)
-      console.log('reload data')
   }, [reloadData]);
 
-  useEffect(() => {
-    fetch(`/api/v1/project/${project_id}/labels`, { headers: new Headers(HEADERS) })
-      .then((response) => response.json())
-      .then((response) => {setLabels(['None', ...response].map((item)=>({value: item, label: item}))); console.log(response)})
-      .catch((error)=>console.log(error));
-  }, []);
 
   useEffect(() => {
-    if (data?.hits) {
-      setTextArray(() => data.hits.map((item) => item._source[selectedMapping ? selectedMapping : mappings[0].value]));
+    if (data) {
+      setTextArray(() => data.map((item) => item._source[selectedMapping ? selectedMapping : mappings[0].value]));
     }
   }, [selectedMapping, data]);
 
@@ -64,9 +59,8 @@ const DocumentMap = () => {
   const [selected, setSelected] = useState({ points: [] });
 
   const onSelected = (data) => {
-    console.log(data)
     setSelected(data);
-    if (data?.length === 0) {
+    if (data.length === 0) {
       setIsModalVisible(() => false);
     } else {
       setIsModalVisible(() => true);
@@ -75,7 +69,7 @@ const DocumentMap = () => {
 
   const onChangeLabels = (e) => {
     setSelectedLabel(e.target.value)
-    setHighlightedData(data.hits.filter((item)=>{
+    setHighlightedData(data.filter((item)=>{
       if (item._source.annotations) {
         return item._source.annotations[e.target.value]
       } else {
@@ -85,11 +79,10 @@ const DocumentMap = () => {
   }
 
   const onSearch = () => {
-    fetch("/api/v1/project/" + project_id + "/documents/?" + new URLSearchParams({
-      page: 0,
-      size: 1000
-      }), 
-      { headers: new Headers(HEADERS), method: 'POST', body: JSON.stringify({query: query.current.state.value})})
+    fetch(`/api/v1/documents/all?index_pattern=${index}`,
+      { headers: new Headers(HEADERS), 
+        method: 'POST', 
+        body: JSON.stringify({query: query.current.state.value})})
     .then((response) => response.json())
     .then(setData)
     .catch((error) => console.log(error))
@@ -130,7 +123,6 @@ const DocumentMap = () => {
             value={selectedMapping}
             onChange={(e) => {
               setSelectedMapping(e.target.value);
-              console.log(e.target.value);
             }}
             aria-label="Use aria labels when no actual label is in use"
           />
@@ -138,21 +130,21 @@ const DocumentMap = () => {
       </EuiFlexGroup>
       <EuiFlexGroup>
         <EuiFlexItem>
-          {data?.hits && textArray ? (
+          {data && textArray ? (
             <Plot
               data={[
                 {
-                  ids: data.hits.map((item) => item._id),
+                  ids: data.map((item) => item._id),
                   labels: ["label1", "label2", "label3"],
-                  x: data.hits.map((item) => item._source.topic_map.x),
-                  y: data.hits.map((item) => item._source.topic_map.y),
+                  x: data.map((item) => item._source.topic_map.x),
+                  y: data.map((item) => item._source.topic_map.y),
                   text: textArray,
-                  hovertemplate: "<b>%{text}</b>",
+                  hovertemplate: "%{text}",
                   showlegend: false,
                   type: "scatter",
                   mode: "markers",
                   marker: {
-                    color: data.hits.map(
+                    color: data.map(
                       (item) => item._source.topic_map.density
                     ),
                     colorscale: "Hot",
